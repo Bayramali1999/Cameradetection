@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 
+import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.JavaCameraView;
 
 public class MyCameraView extends JavaCameraView implements Camera.PictureCallback {

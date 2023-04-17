@@ -56,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         int dWidth = size.x;
         int dHeight = size.y;
 
+        CameraBridgeViewBase.scale1 = 1.6f;
+        CameraBridgeViewBase.scale2 = 1.6f;
+
         if (!hasPermission(this, PERMISSION)) {
             requestPermissions(PERMISSION, 100);
         }
