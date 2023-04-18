@@ -33,6 +33,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     protected static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
     private static final int STARTED = 1;
+    private static int screenHeight = 0;
 
     private int mState = STOPPED;
     private Bitmap mCacheBitmap;
@@ -55,6 +56,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     public static final int CAMERA_ID_FRONT = 98;
     public static final int RGBA = 1;
     public static final int GRAY = 2;
+    private static int screenWidth = 0;
 
     public CameraBridgeViewBase(Context context, int cameraId) {
         super(context);
@@ -80,6 +82,11 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         mMaxWidth = MAX_UNSPECIFIED;
         mMaxHeight = MAX_UNSPECIFIED;
         styledAttrs.recycle();
+    }
+
+    public static void giveScreenSize(int width, int dHeight) {
+        screenWidth = width;
+        screenHeight = dHeight;
     }
 
     /**
@@ -470,37 +477,35 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
 
         if (bmpValid && mCacheBitmap != null) {
             Canvas canvas = getHolder().lockCanvas();
-
-
-//            if (canvas.getHeight() > canvas.getWidth()) {
-//                //todo '$scale' size use different device
-//                scale1 = 1.1f;
-//                scale2 = 1.1f;
-//            } else {
-//                scale1 = 1.8f;
-//                scale2 = 1.8f;
-//            }
-
-
             if (canvas != null) {
-                canvas.rotate(90f, canvas.getWidth() / 2, canvas.getHeight() / 2);
-
-                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-                if (BuildConfig.DEBUG) Log.d(TAG, "mStretch value: " + mScale);
-                if (scale1 != 0) {
-                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2), (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2), (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth()), (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight())), null);
-                    Log.d(TAG, "deliverAndDrawFrame: canvas" + canvas.getWidth() + " scale" + scale1 * mCacheBitmap.getWidth());
+                if (canvas.getHeight() > canvas.getWidth()) {
+                    //todo '$scale' size use different device
+                    scale1 = 1.4f;
+                    scale2 = 1.5f;
+                } else {
+                    scale1 = 1.8f;
+                    scale2 = 1.3f;
                 }
 
-//                if (mScale != 0) {
-//                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()),
-//                            new Rect((int) ((canvas.getWidth() - mScale * mCacheBitmap.getWidth()) / 2),
-//                                    (int) ((canvas.getHeight() - mScale * mCacheBitmap.getHeight()) / 2),
-//
-//                                    (int) ((canvas.getWidth() - mScale * mCacheBitmap.getWidth()) / 2 + mScale * mCacheBitmap.getWidth()),
-//                                    (int) ((canvas.getHeight() - mScale * mCacheBitmap.getHeight()) / 2 + mScale * mCacheBitmap.getHeight())), null);
-//                }
-                else {
+                canvas.rotate(90f, canvas.getWidth() / 2, canvas.getHeight() / 2);
+                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+
+                if (BuildConfig.DEBUG) Log.d(TAG, "mStretch value: " + mScale);
+                if (scale1 != 0) {
+
+                    int scale1RectX = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2);
+                    int scale2RectY = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2);
+
+                    int scale1RectXW = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth());
+                    int scale1RectYH = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight());
+                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect(scale1RectX, scale2RectY, scale1RectXW, scale1RectYH), null);
+
+                    //canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2), (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2), (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth()), (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight())), null);
+
+                    Log.d(TAG, "deliverAndDrawFrame:X canvas" + mCacheBitmap.getWidth() + " scale" + " screen " + screenWidth + " pos" + scale1RectX + " width-pos" + scale1RectXW);
+                    Log.d(TAG, "deliverAndDrawFrame:Y canvas" + mCacheBitmap.getHeight() + " scale" + " screen " + screenHeight + " pos" + scale2RectY + " width-pos" + scale1RectYH);
+
+                } else {
                     canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2, (canvas.getHeight() - mCacheBitmap.getHeight()) / 2, (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(), (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null);
                 }
 

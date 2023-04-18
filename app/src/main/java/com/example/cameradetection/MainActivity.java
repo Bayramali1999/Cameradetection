@@ -7,8 +7,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.media.MediaActionSound;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Display;
 import android.view.SurfaceView;
 import android.view.View;
@@ -22,6 +22,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -56,8 +57,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         int dWidth = size.x;
         int dHeight = size.y;
 
-        CameraBridgeViewBase.scale1 = 1.6f;
-        CameraBridgeViewBase.scale2 = 1.6f;
+        CameraBridgeViewBase.giveScreenSize(dWidth, dHeight);
+        CameraBridgeViewBase.scale2 = 2f;
 
         if (!hasPermission(this, PERMISSION)) {
             requestPermissions(PERMISSION, 100);
@@ -104,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(width, height, CvType.CV_8UC4);
+        Log.d("TAG", "deliverAndDrawFrame:Y camera w " + width + " h" + height);
 
         cameraWidth = width;
         cameraHeight = height;
@@ -129,12 +131,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Mat imgBlur = new Mat();
         Mat imgCanny = new Mat();
 
-        mRgba = inputFrame.rgba();
+        Mat mrgba2 = inputFrame.rgba().clone();
 
+        mRgba = inputFrame.rgba().clone();
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
 
-        Mat finalImg = mRgba.clone();
+        Mat finalImg = inputFrame.rgba().clone();
 
         Imgproc.cvtColor(mRgba, imgGray, Imgproc.COLOR_RGB2GRAY);
         Imgproc.GaussianBlur(imgGray, imgBlur, new Size(5, 5), 1);
@@ -192,11 +195,22 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
             }
         }
+
         if (rectangle_4 && rectangle_3 && rectangle_2 && rectangle_1) {
-            MediaActionSound mediaActionSound = new MediaActionSound();
-            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
-            cameraBridgeViewBase.takePicture(this);
+//            MediaActionSound mediaActionSound = new MediaActionSound();
+//            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
+//            cameraBridgeViewBase.takePicture(this);
+
+
+            Bitmap bitmap = Bitmap.createBitmap(mrgba2.width(), mrgba2.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(mrgba2, bitmap);
+            cameraBridgeViewBase.disableView();
+            cameraBridgeViewBase.setVisibility(GONE);
+            ImageView view = findViewById(R.id.ivbb);
+            view.setVisibility(View.VISIBLE);
+            view.setImageBitmap(bitmap);
         }
+
         return finalImg;
     }
 
