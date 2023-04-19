@@ -1,14 +1,11 @@
 package com.example.cameradetection;
 
-import static android.view.View.GONE;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.media.MediaActionSound;
 import android.os.Bundle;
 import android.view.SurfaceView;
 
@@ -44,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private final int smallRectangleWidth = 130;
     private final int smallRectangleHeight = 130;
     int smallx1, smally1, smallx2, smally2;
+
+    int counter = 0;
 
     private final String[] PERMISSION = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
 
@@ -157,49 +156,48 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             int numberVertices = (int) approxCurve.total();
             double contourArea = Imgproc.contourArea(contour);
 
-            if (Math.abs(contourArea) < 50 || Math.abs(contourArea) > 800) {
+            if (Math.abs(contourArea) < 50 || Math.abs(contourArea) > 1000) {
                 continue;
             }
 
             if (numberVertices >= 4 && numberVertices <= 6) {
                 Rect r = Imgproc.boundingRect(contour);
                 int area = (int) r.area();
-                if (area < smallRectangleWidth * smallRectangleHeight && area >= 40) {
-                    if ((r.x >= x1 && r.x + r.width <= smallRectangleHeight) && (r.y >= y1 && r.y + r.height <= smallRectangleWidth)) {
-                        Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(smallRectangleWidth, smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                        smallx1 = r.x + (r.width) / 2;
-                        smally1 = r.y + (r.height) / 2;
+                if ((r.x >= x1 && r.x + r.width <= smallRectangleHeight) && (r.y >= y1 && r.y + r.height <= smallRectangleWidth)) {
+                    Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(smallRectangleWidth, smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                    smallx1 = r.x + (r.width) / 2;
+                    smally1 = r.y + (r.height) / 2;
 
-                        rectangle_1 = true;
-                    }
-                    if ((r.x >= x2 - smallRectangleHeight && r.x + r.width <= x2) && (r.y >= y2 && r.y + r.width <= y2 + smallRectangleWidth)) {
-                        Imgproc.rectangle(finalImg, new Point(x2, y2), new Point(x2 - smallRectangleWidth, y2 + smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                        rectangle_2 = true;
-                    }
-                    if ((r.x >= x3 && r.x + r.width <= x3 + smallRectangleWidth) && (r.y >= y3 - smallRectangleWidth && r.y + r.height <= y3)) {
-                        Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(smallRectangleWidth, y3 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                        rectangle_3 = true;
-                    }
-                    if ((r.x >= x4 - smallRectangleHeight && r.x + r.width <= x4) && (r.y >= y4 - smallRectangleWidth && r.y + r.height <= y4)) {
-                        Imgproc.rectangle(finalImg, new Point(x4, y4), new Point(x4 - smallRectangleWidth, y4 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                        smallx2 = r.x + (r.width) / 2;
-                        smally2 = r.y + (r.height) / 2;
-                        rectangle_4 = true;
-                    }
+                    rectangle_1 = true;
+                }
+                if ((r.x >= x2 - smallRectangleHeight && r.x + r.width <= x2) && (r.y >= y2 && r.y + r.width <= y2 + smallRectangleWidth)) {
+                    Imgproc.rectangle(finalImg, new Point(x2, y2), new Point(x2 - smallRectangleWidth, y2 + smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                    rectangle_2 = true;
+                }
+                if ((r.x >= x3 && r.x + r.width <= x3 + smallRectangleWidth) && (r.y >= y3 - smallRectangleWidth && r.y + r.height <= y3)) {
+                    Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(smallRectangleWidth, y3 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                    rectangle_3 = true;
+                }
+                if ((r.x >= x4 - smallRectangleHeight && r.x + r.width <= x4) && (r.y >= y4 - smallRectangleWidth && r.y + r.height <= y4)) {
+                    Imgproc.rectangle(finalImg, new Point(x4, y4), new Point(x4 - smallRectangleWidth, y4 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                    smallx2 = r.x + (r.width) / 2;
+                    smally2 = r.y + (r.height) / 2;
+                    rectangle_4 = true;
                 }
             }
         }
 
-        if (rectangle_4 && rectangle_3 && rectangle_2 && rectangle_1) {
+        if (rectangle_4 && rectangle_3 && rectangle_2 && rectangle_1 && counter == 0) {
 
 //            MediaActionSound mediaActionSound = new MediaActionSound();
 //            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
 //            Imgproc.rectangle(mrgba2, new Point(smallx1, smally1), new Point(smallx2, smally2), new Scalar(0, 255, 0, 1), 5);
 
+            counter++;
             Bitmap bitmap1 = Bitmap.createBitmap(mrgba2.width(), mrgba2.height(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(mrgba2, bitmap1);
 
@@ -269,8 +267,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Intent in1 = new Intent(this, ImageDetectActivity.class);
             in1.putExtra("image", filename);
             startActivity(in1);
-            cameraBridgeViewBase.disableView();
-            cameraBridgeViewBase.setVisibility(GONE);
+            finish();
+//            cameraBridgeViewBase.disableView();
         } catch (Exception e) {
             e.printStackTrace();
         }
