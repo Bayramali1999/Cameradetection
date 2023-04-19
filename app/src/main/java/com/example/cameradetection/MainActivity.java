@@ -156,11 +156,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             int numberVertices = (int) approxCurve.total();
             double contourArea = Imgproc.contourArea(contour);
 
-            if (Math.abs(contourArea) < 50 || Math.abs(contourArea) > 1000) {
+            if (Math.abs(contourArea) < 600 ) {
                 continue;
             }
 
-            if (numberVertices >= 4 && numberVertices <= 6) {
+            if (numberVertices == 4) {
                 Rect r = Imgproc.boundingRect(contour);
                 int area = (int) r.area();
                 if ((r.x >= x1 && r.x + r.width <= smallRectangleHeight) && (r.y >= y1 && r.y + r.height <= smallRectangleWidth)) {
