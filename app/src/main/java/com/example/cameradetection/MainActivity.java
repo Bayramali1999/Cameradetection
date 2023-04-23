@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.media.MediaActionSound;
 import android.os.Bundle;
 import android.view.SurfaceView;
 
@@ -40,12 +41,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private int x1, x2, x3, x4, y1, y2, y3, y4;
     private final int smallRectangleWidth = 130;
     private final int smallRectangleHeight = 130;
-    int smallx1, smally1, smallx2, smally2;
+    float smallx1, smally1, smallx2, smally2, smallx3, smally3, smallx4, smally4;
     //we will find the edges of the new_image (corners of the square/rectangle)
-    Point p1; //upper left; minX && minY
-    Point p2; //upper right; maxX && minY
-    Point p3; //lower right; maxX && maxY
-    Point p4;
+    Point p1 = null; //upper left; minX && minY
+    Point p2 = null; //upper right; maxX && minY
+    Point p3 = null; //lower right; maxX && maxY
+    Point p4 = null;
     int counter = 0;
 
     private final String[] PERMISSION = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
@@ -58,18 +59,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //        android.graphics.Point size = new android.graphics.Point();
 //        display.getSize(size);
 //
-//        int dWidth = size.x;
+//        cameraWidth = size.x;
 //        int dHeight = size.y;
 
 //        CameraBridgeViewBase.giveScreenSize(dWidth, dHeight);
 
+
         if (!hasPermission(this, PERMISSION)) {
             requestPermissions(PERMISSION, 100);
         }
-        cameraBridgeViewBase = findViewById(R.id.camera);
-        cameraBridgeViewBase.setVisibility(SurfaceView.VISIBLE);
-        cameraBridgeViewBase.setCvCameraViewListener(this);
-
+        setCameraStart();
         baseLoaderCallback = new BaseLoaderCallback(this) {
             @Override
             public void onManagerConnected(int status) {
@@ -84,11 +83,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         };
     }
 
+    private void setCameraStart() {
+        cameraBridgeViewBase = findViewById(R.id.camera);
+        cameraBridgeViewBase.setVisibility(SurfaceView.VISIBLE);
+        cameraBridgeViewBase.setCvCameraViewListener(this);
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 100 && grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            //permissioon granted
+//            setCameraStart();
         }
     }
 
@@ -108,7 +113,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(width, height, CvType.CV_8UC4);
-
         cameraWidth = width;
         cameraHeight = height;
         x1 = 0;
@@ -160,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             int numberVertices = (int) approxCurve.total();
             double contourArea = Imgproc.contourArea(contour);
 
-            if (Math.abs(contourArea) < 50 || Math.abs(contourArea) > 1000) {
+            if (Math.abs(contourArea) < 400) {
                 continue;
             }
 
@@ -170,52 +174,66 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 if ((r.x >= x1 && r.x + r.width <= smallRectangleHeight) && (r.y >= y1 && r.y + r.height <= smallRectangleWidth)) {
                     Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(smallRectangleWidth, smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
                     Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    smallx1 = r.x + (r.width) / 2;
-                    smally1 = r.y + (r.height) / 2;
+                    smallx1 = r.x + (r.width) / 2f;
+                    smally1 = r.y + (r.height) / 2f;
                     p2 = new Point(smallx1, smally1);
                     rectangle_1 = true;
                 }
                 if ((r.x >= x2 - smallRectangleHeight && r.x + r.width <= x2) && (r.y >= y2 && r.y + r.width <= y2 + smallRectangleWidth)) {
                     Imgproc.rectangle(finalImg, new Point(x2, y2), new Point(x2 - smallRectangleWidth, y2 + smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
                     Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    p1 = new Point(r.x, r.y);
+                    smallx2 = r.x + (r.width) / 2f;
+                    smally2 = r.y + (r.height) / 2f;
+                    p1 = new Point(smallx2, smally2);
                     rectangle_2 = true;
                 }
                 if ((r.x >= x3 && r.x + r.width <= x3 + smallRectangleWidth) && (r.y >= y3 - smallRectangleWidth && r.y + r.height <= y3)) {
                     Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(smallRectangleWidth, y3 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
                     Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
                     rectangle_3 = true;
-                    p3 = new Point(r.x, r.y);
 
+                    smallx3 = r.x + (r.width) / 2f;
+                    smally3 = r.y + (r.height) / 2f;
+                    p3 = new Point(smallx3, smally3);
                 }
                 if ((r.x >= x4 - smallRectangleHeight && r.x + r.width <= x4) && (r.y >= y4 - smallRectangleWidth && r.y + r.height <= y4)) {
                     Imgproc.rectangle(finalImg, new Point(x4, y4), new Point(x4 - smallRectangleWidth, y4 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
                     Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    smallx2 = r.x + (r.width) / 2;
-                    smally2 = r.y + (r.height) / 2;
+                    smallx4 = r.x + (r.width) / 2f;
+                    smally4 = r.y + (r.height) / 2f;
                     rectangle_4 = true;
-                    p3 = new Point(smallx2, smally2);
-
+                    p4 = new Point(smallx4, smally4);
                 }
             }
         }
 
         if (rectangle_4 && rectangle_3 && rectangle_2 && rectangle_1 && counter == 0) {
-
-//            MediaActionSound mediaActionSound = new MediaActionSound();
-//            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
-//            Imgproc.rectangle(mrgba2, new Point(smallx1, smally1), new Point(smallx2, smally2), new Scalar(0, 255, 0, 1), 5);
-
-            counter++;
-            Bitmap bitmap1 = Bitmap.createBitmap(mrgba2.width(), mrgba2.height(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(mrgba2, bitmap1);
-
-            Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap1, 0, 0, bitmap1.getWidth(), bitmap1.getHeight(), null, true);
-            cropImage(rotatedBitmap);
+            MediaActionSound mediaActionSound = new MediaActionSound();
+            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
+            if (p1 != null && p2 != null && p3 != null && p4 != null) {
+                counter++;
+                editFrame(mrgba2);
+            }
         }
         return finalImg;
     }
 
+    private void editFrame(Mat mrgba2) {
+        Mat imgWrap = mrgba2.clone();
+        float w = imgWrap.width(), h = imgWrap.height();
+        Mat src = new Mat(4, 1, CvType.CV_32FC2);
+        Mat dst = new Mat(4, 1, CvType.CV_32FC2);
+        src.put(0, 0, smallx1, smally1, smallx2, smally2, smallx3, smally3, smallx4, smally4);
+        dst.put(0, 0, 0.0, 0.0, w, 0, 0, h, w, h);
+        Mat matrix = Imgproc.getPerspectiveTransform(src, dst);
+        Imgproc.warpPerspective(mrgba2, imgWrap, matrix, new Size(w, h));
+        Bitmap bitmap1 = Bitmap.createBitmap((int) w, (int) h, Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(imgWrap, bitmap1);
+        Matrix matrixs = new Matrix();
+        matrixs.postRotate(90);
+        Bitmap rotated = Bitmap.createBitmap(bitmap1, 0, 0, bitmap1.getWidth(), bitmap1.getHeight(), matrixs, true);
+        showEditedPicture(rotated);
+    }
 
     @Override
     protected void onResume() {
@@ -226,66 +244,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        if (cameraBridgeViewBase != null) {
-//            cameraBridgeViewBase.disableView();
-//            cameraBridgeViewBase.setVisibility(GONE);
-//        }
-//    }
-
-    public float getRatioX(float cameraWidth, float bitmapWidth) {
-        return bitmapWidth / cameraWidth;
-    }
-
-    public float getRatioY(float cameraHeight, float bitmapHeight) {
-        return bitmapHeight / cameraHeight;
-    }
-
-    //    private void cropImage(Bitmap bitmap, Bitmap rotatedBitmap) {
-//        float ratioX = getRatioX(cameraWidth, rotatedBitmap.getWidth());
-//        float ratioY = getRatioY(cameraHeight, rotatedBitmap.getHeight());
-//        Bitmap cropedimage = Bitmap.createBitmap(bitmap, (int) (smallx1 * ratioX), (int) (smally1 * ratioY), (int) ((smallx2 - smallx1) * ratioX), (int) ((smally2 - smally1) * ratioY), null, true);
-//        Matrix matrix = new Matrix();
-//        matrix.postRotate(90);
-//        Bitmap rotated = Bitmap.createBitmap(cropedimage, 0, 0, cropedimage.getWidth(), cropedimage.getHeight(), matrix, true);
-//
-//        try {
-//            String filename = "abitmap.png";
-//            FileOutputStream stream = this.openFileOutput(filename, Context.MODE_PRIVATE);
-//            rotated.compress(Bitmap.CompressFormat.PNG, 100, stream);
-//            stream.close();
-//            rotated.recycle();
-//            Intent in1 = new Intent(this, ImageDetectActivity.class);
-//            in1.putExtra("image", filename);
-//            startActivity(in1);
-//            finish();
-////            cameraBridgeViewBase.disableView();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-    private void cropImage(Bitmap bitmap) {
-        float ratioX = getRatioX(cameraWidth, bitmap.getWidth());
-        float ratioY = getRatioY(cameraHeight, bitmap.getHeight());
-        Bitmap cropedimage = Bitmap.createBitmap(bitmap, (int) (smallx1 * ratioX), (int) (smally1 * ratioY), (int) ((smallx2 - smallx1) * ratioX), (int) ((smally2 - smally1) * ratioY), null, true);
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
-        Bitmap rotated = Bitmap.createBitmap(cropedimage, 0, 0, cropedimage.getWidth(), cropedimage.getHeight(), matrix, true);
-
-        Mat original_image = new Mat(rotated.getWidth(), rotated.getHeight(), CvType.CV_8UC4);
-        Utils.bitmapToMat(rotated, original_image);
-        Mat src = new Mat(4, 1, CvType.CV_32FC2);
-        src.put((int) p1.y, (int) p1.x, (int) p2.y, (int) p2.x, (int) p4.y, (int) p4.x, (int) p3.y, (int) p3.x);
-        Mat dst = new Mat(4, 1, CvType.CV_32FC2);
-        dst.put(0, 0, 0, original_image.width(), original_image.height(), original_image.width(), original_image.height(), 0);
-
-        Mat perspectiveTransform = Imgproc.getPerspectiveTransform(src, dst);
-        Mat cropped_image = original_image.clone();
-//        Imgproc.warpPerspective(untouched, cropped_image, perspectiveTransform, new Size(512, 512));
-
-
+    private void showEditedPicture(Bitmap rotated) {
         try {
             String filename = "abitmap.png";
             FileOutputStream stream = this.openFileOutput(filename, Context.MODE_PRIVATE);
@@ -296,10 +255,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             in1.putExtra("image", filename);
             startActivity(in1);
             finish();
-//            cameraBridgeViewBase.disableView();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
-

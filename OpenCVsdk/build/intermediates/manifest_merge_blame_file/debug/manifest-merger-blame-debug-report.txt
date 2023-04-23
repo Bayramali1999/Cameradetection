@@ -5,7 +5,7 @@
 5    android:versionName="3.4.16" >
 6
 7    <uses-sdk android:minSdkVersion="24" />
-7-->D:\android\Cameradetection\OpenCVsdk\java\AndroidManifest.xml:7:5-73
-7-->D:\android\Cameradetection\OpenCVsdk\java\AndroidManifest.xml:7:15-40
+7-->F:\android\Cameradetection32\OpenCVsdk\java\AndroidManifest.xml:7:5-73
+7-->F:\android\Cameradetection32\OpenCVsdk\java\AndroidManifest.xml:7:15-40
 8
 9</manifest>
