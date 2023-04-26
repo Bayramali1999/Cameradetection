@@ -8,7 +8,10 @@ import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.media.MediaActionSound;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Display;
 import android.view.SurfaceView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -55,14 +58,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        Display display = getWindowManager().getDefaultDisplay();
-//        android.graphics.Point size = new android.graphics.Point();
-//        display.getSize(size);
-//
-//        cameraWidth = size.x;
-//        int dHeight = size.y;
-
-//        CameraBridgeViewBase.giveScreenSize(dWidth, dHeight);
 
 
         if (!hasPermission(this, PERMISSION)) {
@@ -87,6 +82,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraBridgeViewBase = findViewById(R.id.camera);
         cameraBridgeViewBase.setVisibility(SurfaceView.VISIBLE);
         cameraBridgeViewBase.setCvCameraViewListener(this);
+        cameraBridgeViewBase.enableFpsMeter();
+
+        Display display = getWindowManager().getDefaultDisplay();
+        android.graphics.Point size = new android.graphics.Point();
+        display.getSize(size);
+        int screen_width = size.x;
+        int screen_height = size.y;
+
+        int x = screen_height - (557 * screen_width) / 435;
+
+        Log.d("TAG", "onCreate: h= " + x);
+        Log.d("TAG", "onCreate: screen w= " + screen_width);
+        Log.d("TAG", "onCreate: screen h= " + screen_height);
+        if (x > 0) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(screen_width, screen_height - x / 2);
+            findViewById(R.id.camera_container).setLayoutParams(lp);
+            LinearLayout.LayoutParams lpTop = new LinearLayout.LayoutParams(screen_width, x / 2);
+            findViewById(R.id.top).setLayoutParams(lpTop);
+
+        } else {
+            int x1 = screen_width - (435 * screen_height) / 557;
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(screen_width - x1, screen_height);
+            findViewById(R.id.camera_container).setLayoutParams(lp);
+        }
     }
 
     @Override
@@ -113,8 +132,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(width, height, CvType.CV_8UC4);
+//        todo camera screen rectangle position fix in here
+//        cameraWidth = (int) (height * 555) / 435;
         cameraWidth = width;
         cameraHeight = height;
+        Log.d("TAG", "onCameraViewStarted: w=" + width + " h=" + height + " ch" + cameraHeight);
         x1 = 0;
         x2 = cameraWidth;
         x3 = 0;
@@ -141,6 +163,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mRgba.copyTo(mrgba2);
         mRgba.copyTo(finalImg);
 
+//        Imgproc.resize(finalImg, finalImg, new Size(cameraWidth, cameraHeight));
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
 
@@ -164,45 +187,56 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             int numberVertices = (int) approxCurve.total();
             double contourArea = Imgproc.contourArea(contour);
 
-            if (Math.abs(contourArea) < 400) {
+            if (Math.abs(contourArea) < 200) {
                 continue;
             }
 
-            if (numberVertices >= 4 && numberVertices <= 6) {
+            if (numberVertices == 4) {
                 Rect r = Imgproc.boundingRect(contour);
                 int area = (int) r.area();
-                if ((r.x >= x1 && r.x + r.width <= smallRectangleHeight) && (r.y >= y1 && r.y + r.height <= smallRectangleWidth)) {
-                    Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(smallRectangleWidth, smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    smallx1 = r.x + (r.width) / 2f;
-                    smally1 = r.y + (r.height) / 2f;
-                    p2 = new Point(smallx1, smally1);
-                    rectangle_1 = true;
+                if (area > smallRectangleHeight * smallRectangleWidth) {
+                    continue;
                 }
-                if ((r.x >= x2 - smallRectangleHeight && r.x + r.width <= x2) && (r.y >= y2 && r.y + r.width <= y2 + smallRectangleWidth)) {
-                    Imgproc.rectangle(finalImg, new Point(x2, y2), new Point(x2 - smallRectangleWidth, y2 + smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    smallx2 = r.x + (r.width) / 2f;
-                    smally2 = r.y + (r.height) / 2f;
-                    p1 = new Point(smallx2, smally2);
-                    rectangle_2 = true;
-                }
-                if ((r.x >= x3 && r.x + r.width <= x3 + smallRectangleWidth) && (r.y >= y3 - smallRectangleWidth && r.y + r.height <= y3)) {
-                    Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(smallRectangleWidth, y3 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    rectangle_3 = true;
 
-                    smallx3 = r.x + (r.width) / 2f;
-                    smally3 = r.y + (r.height) / 2f;
-                    p3 = new Point(smallx3, smally3);
+                if (r.x >= x1 && r.x + r.width <= smallRectangleHeight) {
+                    if (r.y >= y1 && r.y + r.height <= smallRectangleWidth) {
+                        Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(smallRectangleWidth, smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        smallx1 = r.x + (r.width) / 2f;
+                        smally1 = r.y + (r.height) / 2f;
+                        p2 = new Point(smallx1, smally1);
+                        rectangle_1 = true;
+                    }
                 }
-                if ((r.x >= x4 - smallRectangleHeight && r.x + r.width <= x4) && (r.y >= y4 - smallRectangleWidth && r.y + r.height <= y4)) {
-                    Imgproc.rectangle(finalImg, new Point(x4, y4), new Point(x4 - smallRectangleWidth, y4 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
-                    Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
-                    smallx4 = r.x + (r.width) / 2f;
-                    smally4 = r.y + (r.height) / 2f;
-                    rectangle_4 = true;
-                    p4 = new Point(smallx4, smally4);
+                if (r.x >= x2 - smallRectangleHeight && r.x + r.width <= x2) {
+                    if (r.y >= y2 && r.y + r.width <= smallRectangleWidth) {
+                        Imgproc.rectangle(finalImg, new Point(x2, y2), new Point(x2 - smallRectangleWidth, y2 + smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        smallx2 = r.x + (r.width) / 2f;
+                        smally2 = r.y + (r.height) / 2f;
+                        p1 = new Point(smallx2, smally2);
+                        rectangle_2 = true;
+                    }
+                }
+                if (r.x >= x3 && r.x + r.width <= smallRectangleWidth) {
+                    if (r.y >= y3 - smallRectangleWidth && r.y + r.height <= y3) {
+                        Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(smallRectangleWidth, y3 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        rectangle_3 = true;
+                        smallx3 = r.x + (r.width) / 2f;
+                        smally3 = r.y + (r.height) / 2f;
+                        p3 = new Point(smallx3, smally3);
+                    }
+                }
+                if (r.x >= x4 - smallRectangleHeight && r.x + r.width <= x4) {
+                    if (r.y >= y4 - smallRectangleWidth && r.y + r.height <= y4) {
+                        Imgproc.rectangle(finalImg, new Point(x4, y4), new Point(x4 - smallRectangleWidth, y4 - smallRectangleHeight), new Scalar(0, 255, 0, 0), 5);
+//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        smallx4 = r.x + (r.width) / 2f;
+                        smally4 = r.y + (r.height) / 2f;
+                        rectangle_4 = true;
+                        p4 = new Point(smallx4, smally4);
+                    }
                 }
             }
         }
@@ -215,6 +249,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 editFrame(mrgba2);
             }
         }
+
+//        Display display = getWindowManager().getDefaultDisplay();
+//        android.graphics.Point size = new android.graphics.Point();
+//        display.getSize(size);
+//        Log.d("TAG", "onCameraFrame: x" + size.x + " y=" + size.y);
+//        Log.d("TAG", "onCameraFrame:display x" + display.getWidth() + " y=" +display.getHeight());
+//        Log.d("TAG", "onCameraFrame:Mat x" + finalImg.width() + " y=" + finalImg.height());
+//        Imgproc.resize(finalImg, finalImg, new Size(960,540));
         return finalImg;
     }
 

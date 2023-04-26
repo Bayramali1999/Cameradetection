@@ -33,7 +33,6 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     protected static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
     private static final int STARTED = 1;
-    private static int screenHeight = 0;
 
     private int mState = STOPPED;
     private Bitmap mCacheBitmap;
@@ -56,7 +55,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     public static final int CAMERA_ID_FRONT = 98;
     public static final int RGBA = 1;
     public static final int GRAY = 2;
-    private static int screenWidth = 0;
+    public static int screenWidth = 0;
+    public static int screenHeight = 0;
 
     public CameraBridgeViewBase(Context context, int cameraId) {
         super(context);
@@ -404,6 +404,78 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
      *
      * @param frame - the current frame to be delivered
      */
+    protected void deliverAndDrawFrame(CvCameraViewFrame frame) {
+        Mat modified;
+
+        if (mListener != null) {
+            modified = mListener.onCameraFrame(frame);
+        } else {
+            modified = frame.rgba();
+        }
+
+        boolean bmpValid = true;
+        if (modified != null) {
+            try {
+                Utils.matToBitmap(modified, mCacheBitmap);
+            } catch (Exception e) {
+                Log.e(TAG, "Mat type: " + modified);
+                Log.e(TAG, "Bitmap type: " + mCacheBitmap.getWidth() + "*" + mCacheBitmap.getHeight());
+                Log.e(TAG, "Utils.matToBitmap() throws an exception: " + e.getMessage());
+                bmpValid = false;
+            }
+        }
+
+        if (bmpValid && mCacheBitmap != null) {
+            Canvas canvas = getHolder().lockCanvas();
+            // rotate canvas by 90 degree
+            // for portrait mode
+            // now you hava to scale frame according to your phone
+
+
+            if (canvas != null) {
+                float mScale1 = 0;
+                float mScale2 = 0;
+                if (canvas.getHeight() > canvas.getWidth()) {
+                    canvas.rotate(90f, canvas.getWidth() / 2, canvas.getHeight() / 2);
+                    // for my Phone my scale values are
+                    mScale1 = (float) canvas.getHeight() / (float) mCacheBitmap.getWidth();
+                    mScale2 = (float) canvas.getWidth() / (float) mCacheBitmap.getHeight();
+
+                } else {
+                    mScale1 = (float) canvas.getWidth() / (float) mCacheBitmap.getWidth();
+                    mScale2 = (float) canvas.getHeight() / (float) mCacheBitmap.getHeight();
+                }
+
+                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+                if (BuildConfig.DEBUG) Log.d(TAG, "mStretch value: " + mScale);
+
+                //this code will scale canvas to fit your phone
+
+                if (mScale1 != 0) {
+//                    int scale1RectX = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2);
+//                    int scale2RectY = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2);
+//
+//                    int scale1RectXW = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth());
+//                    int scale1RectYH = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight());
+////                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0,600, 800), new Rect(-20, 485, 1200, 1500), null);
+                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()),
+                            new Rect((int) ((canvas.getWidth() - mScale1 * mCacheBitmap.getWidth()) / 2),
+                                    (int) ((canvas.getHeight() - mScale2 * mCacheBitmap.getHeight()) / 2),
+                                    (int) ((canvas.getWidth() - mScale1 * mCacheBitmap.getWidth()) / 2 + mScale1 * mCacheBitmap.getWidth()),
+                                    (int) ((canvas.getHeight() - mScale2 * mCacheBitmap.getHeight()) / 2 + mScale2 * mCacheBitmap.getHeight())), null);
+
+                } else {
+                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2, (canvas.getHeight() - mCacheBitmap.getHeight()) / 2, (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(), (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null);
+                }
+
+                if (mFpsMeter != null) {
+                    mFpsMeter.measure();
+                    mFpsMeter.draw(canvas, 20, 30);
+                }
+                getHolder().unlockCanvasAndPost(canvas);
+            }
+        }
+    }
 //    protected void deliverAndDrawFrame(CvCameraViewFrame frame) {
 //        Mat modified;
 //
@@ -454,70 +526,70 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
 //            }
 //        }
 //    }
-    protected void deliverAndDrawFrame(CvCameraViewFrame frame) {
-        Mat modified;
-
-        if (mListener != null) {
-            modified = mListener.onCameraFrame(frame);
-        } else {
-            modified = frame.rgba();
-        }
-
-        boolean bmpValid = true;
-        if (modified != null) {
-            try {
-                Utils.matToBitmap(modified, mCacheBitmap);
-            } catch (Exception e) {
-                Log.e(TAG, "Mat type: " + modified);
-                Log.e(TAG, "Bitmap type: " + mCacheBitmap.getWidth() + "*" + mCacheBitmap.getHeight());
-                Log.e(TAG, "Utils.matToBitmap() throws an exception: " + e.getMessage());
-                bmpValid = false;
-            }
-        }
-
-        if (bmpValid && mCacheBitmap != null) {
-            Canvas canvas = getHolder().lockCanvas();
-            if (canvas != null) {
-                if (canvas.getHeight() > canvas.getWidth()) {
-                    //todo '$scale' size use different device
-                    scale1 = 1f;
-                    scale2 = 1f;
-                } else {
-                    scale1 = 1.3f;
-                    scale2 = 1f;
-                }
-
-                canvas.rotate(90f, canvas.getWidth() / 2, canvas.getHeight() / 2);
-                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
-
-                if (BuildConfig.DEBUG) Log.d(TAG, "mStretch value: " + mScale);
-
-                if (scale1 != 0) {
-
-                    int scale1RectX = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2);
-                    int scale2RectY = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2);
-
-                    int scale1RectXW = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth());
-                    int scale1RectYH = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight());
-//                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0,600, 800), new Rect(-20, 485, 1200, 1500), null);
-                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect(scale1RectX, scale2RectY, scale1RectXW , scale1RectYH), null);
-
-
-                    Log.d(TAG, "deliverAndDrawFrame:X canvas" + mCacheBitmap.getWidth() + " scale" + " screen " + screenWidth + " pos" + scale1RectX + " width-pos" + scale1RectXW);
-                    Log.d(TAG, "deliverAndDrawFrame:Y canvas" + mCacheBitmap.getHeight() + " scale" + " screen " + screenHeight + " pos" + scale2RectY + " width-pos" + scale1RectYH);
-
-                } else {
-                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2, (canvas.getHeight() - mCacheBitmap.getHeight()) / 2, (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(), (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null);
-                }
-
-                if (mFpsMeter != null) {
-                    mFpsMeter.measure();
-                    mFpsMeter.draw(canvas, 20, 30);
-                }
-                getHolder().unlockCanvasAndPost(canvas);
-            }
-        }
-    }
+//    protected void deliverAndDrawFrame(CvCameraViewFrame frame) {
+//        Mat modified;
+//
+//        if (mListener != null) {
+//            modified = mListener.onCameraFrame(frame);
+//        } else {
+//            modified = frame.rgba();
+//        }
+//
+//        boolean bmpValid = true;
+//        if (modified != null) {
+//            try {
+//                Utils.matToBitmap(modified, mCacheBitmap);
+//            } catch (Exception e) {
+//                Log.e(TAG, "Mat type: " + modified);
+//                Log.e(TAG, "Bitmap type: " + mCacheBitmap.getWidth() + "*" + mCacheBitmap.getHeight());
+//                Log.e(TAG, "Utils.matToBitmap() throws an exception: " + e.getMessage());
+//                bmpValid = false;
+//            }
+//        }
+//
+//        if (bmpValid && mCacheBitmap != null) {
+//            Canvas canvas = getHolder().lockCanvas();
+//            if (canvas != null) {
+//                if (canvas.getHeight() > canvas.getWidth()) {
+//                    //todo '$scale' size use different device
+//                    scale1 = (float) (canvas.getWidth()) / (float) (mCacheBitmap.getWidth());
+//                    scale2 = (float) (canvas.getHeight()) / (float) (mCacheBitmap.getHeight());
+//                } else {
+//                    scale1 = (float) (canvas.getHeight()) / (float) (mCacheBitmap.getHeight());
+//                    scale2 = (float) (canvas.getWidth()) / (float) (mCacheBitmap.getWidth());
+//                }
+//
+//                canvas.rotate(90f, canvas.getWidth() / 2f, canvas.getHeight() / 2f);
+//                canvas.drawColor(0, android.graphics.PorterDuff.Mode.CLEAR);
+//
+//                if (BuildConfig.DEBUG) Log.d(TAG, "mStretch value: " + mScale);
+//
+//                if (scale1 != 0) {
+//
+//                    int scale1RectX = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2);
+//                    int scale2RectY = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2);
+//
+//                    int scale1RectXW = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth());
+//                    int scale1RectYH = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight());
+////                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0,600, 800), new Rect(-20, 485, 1200, 1500), null);
+//                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect(scale1RectX, scale2RectY, scale1RectXW, scale1RectYH), null);
+//
+//
+//                    Log.d(TAG, "deliverAndDrawFrame:X canvas" + mCacheBitmap.getWidth() + " scale" + " screen " + screenWidth + " pos" + scale1RectX + " width-pos" + scale1RectXW);
+//                    Log.d(TAG, "deliverAndDrawFrame:Y canvas" + mCacheBitmap.getHeight() + " scale" + " screen " + screenHeight + " pos" + scale2RectY + " width-pos" + scale1RectYH);
+//
+//                } else {
+//                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0, mCacheBitmap.getWidth(), mCacheBitmap.getHeight()), new Rect((canvas.getWidth() - mCacheBitmap.getWidth()) / 2, (canvas.getHeight() - mCacheBitmap.getHeight()) / 2, (canvas.getWidth() - mCacheBitmap.getWidth()) / 2 + mCacheBitmap.getWidth(), (canvas.getHeight() - mCacheBitmap.getHeight()) / 2 + mCacheBitmap.getHeight()), null);
+//                }
+//
+//                if (mFpsMeter != null) {
+//                    mFpsMeter.measure();
+//                    mFpsMeter.draw(canvas, 20, 30);
+//                }
+//                getHolder().unlockCanvasAndPost(canvas);
+//            }
+//        }
+//    }
 
     /**
      * This method is invoked shall perform concrete operation to initialize the camera.
