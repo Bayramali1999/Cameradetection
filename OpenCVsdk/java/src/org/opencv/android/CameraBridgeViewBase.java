@@ -33,8 +33,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     protected static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
     private static final int STARTED = 1;
-    public static float mScale1 = 2.2f;
-    public static float mScale2 = 2.2f;
+    public static float mScale1 = 1.8f;
+    public static float mScale2 = 1.8f;
     private int mState = STOPPED;
     private Bitmap mCacheBitmap;
     private CvCameraViewListener2 mListener;
