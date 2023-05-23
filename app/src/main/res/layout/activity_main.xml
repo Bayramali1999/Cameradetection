@@ -7,40 +7,39 @@
     android:background="@color/background"
     tools:context=".MainActivity">
 
-    <!--    <LinearLayout-->
-    <!--        android:id="@+id/camera_container"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="match_parent"-->
-    <!--        android:orientation="vertical">-->
-
-    <!--        <LinearLayout-->
-    <!--            android:id="@+id/top"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:background="@color/background"-->
-    <!--            android:orientation="vertical" />-->
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/camera_container"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.example.cameradetection.MyCameraView
-        android:id="@+id/camera"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+        app:layout_constraintTop_toTopOf="parent">
+        <!--        <LinearLayout-->
+        <!--            android:id="@+id/top"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:background="@color/background"-->
+        <!--            android:orientation="vertical" />-->
+        <com.example.cameradetection.MyCameraView
+            android:id="@+id/camera"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        <!--        <LinearLayout-->
+        <!--            android:id="@+id/bottom"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:orientation="vertical" />-->
+    </LinearLayout>
 
-    <!--        <LinearLayout-->
-    <!--            android:id="@+id/bottom"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:orientation="vertical" />-->
-
-    <!--    </LinearLayout>-->
+    <Button
+        android:id="@+id/take"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="take"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

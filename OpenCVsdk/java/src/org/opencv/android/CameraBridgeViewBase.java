@@ -28,19 +28,17 @@ import java.util.List;
  * The clients shall implement CvCameraViewListener.
  */
 public abstract class CameraBridgeViewBase extends SurfaceView implements SurfaceHolder.Callback {
-
     private static final String TAG = "CameraBridge";
     protected static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
     private static final int STARTED = 1;
-    public static float mScale1 = 1.8f;
-    public static float mScale2 = 1.8f;
+    public static float mScale1 = 2f;
+    public static float mScale2 = 2f;
     private int mState = STOPPED;
     private Bitmap mCacheBitmap;
     private CvCameraViewListener2 mListener;
     private boolean mSurfaceExist;
     private final Object mSyncObject = new Object();
-    public static float scale1 = 0, scale2 = 0;
     protected int mFrameWidth;
     protected int mFrameHeight;
     protected int mMaxHeight;
@@ -437,7 +435,7 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
 
                 Log.d(TAG, "deliverAndDrawFrame: c" + canvas.getWidth() + " " + canvas.getHeight());
                 if (canvas.getHeight() > canvas.getWidth()) {
-                    canvas.rotate(90f, canvas.getWidth() / 2, canvas.getHeight() / 2);
+                    canvas.rotate(90f, (float) canvas.getWidth() / 2, (float) canvas.getHeight() / 2);
                     // for my Phone my scale values are
 //                    mScale1 = (float) canvas.getHeight() / (float) mCacheBitmap.getWidth();
 //                    mScale2 = (float) canvas.getWidth() / (float) mCacheBitmap.getHeight();
@@ -454,8 +452,6 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
 
                 if (mScale1 != 0) {
 //                    int scale1RectX = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2);
-//                    int scale2RectY = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2);
-//
 //                    int scale1RectXW = (int) ((canvas.getWidth() - scale1 * mCacheBitmap.getWidth()) / 2 + scale1 * mCacheBitmap.getWidth());
 //                    int scale1RectYH = (int) ((canvas.getHeight() - scale2 * mCacheBitmap.getHeight()) / 2 + scale2 * mCacheBitmap.getHeight());
 //                    canvas.drawBitmap(mCacheBitmap, new Rect(0, 0,600, 800), new Rect(-20, 485, 1200, 1500), null);
