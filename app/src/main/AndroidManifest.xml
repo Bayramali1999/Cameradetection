@@ -18,7 +18,7 @@
         android:theme="@style/Theme.CameraDetection"
         tools:targetApi="31">
         <activity
-            android:name=".ImageDetectActivity"
+            android:name=".ImageUploadActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

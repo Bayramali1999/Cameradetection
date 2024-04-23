@@ -89,6 +89,7 @@
 //
 
 apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 println "OpenCV: " + project.buildscript.sourceFile
 
@@ -121,8 +122,12 @@ android {
             manifest.srcFile 'java/AndroidManifest.xml'
         }
     }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
 }
 
 dependencies {
 
+implementation 'androidx.core:core-ktx:1.13.0'
 }

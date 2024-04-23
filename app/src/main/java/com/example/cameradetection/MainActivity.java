@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.media.MediaActionSound;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,77 +31,44 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
-    private MyCameraView cameraBridgeViewBase;
+
+    private CameraBridgeViewBase cameraBridgeViewBase;
     private BaseLoaderCallback baseLoaderCallback;
     private Mat mRgba;
     private int x1, x2, x3, x4, y1, y2, y3, y4;
-    Point p1 = null; //upper left; minX && minY
-    Point p2 = null; //upper right; maxX && minY
-    Point p3 = null; //lower right; maxX && maxY
+    Point p1 = null;
+    Point p2 = null;
+    Point p3 = null;
     Point p4 = null;
     int counter = 0;
 
     private final String[] PERMISSION = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
         if (!hasPermission(this, PERMISSION)) {
             requestPermissions(PERMISSION, 100);
+        } else {
+            startCamera();
         }
-        setCameraStart();
-        baseLoaderCallback = new BaseLoaderCallback(this) {
-            @Override
-            public void onManagerConnected(int status) {
-                switch (status) {
-                    case SUCCESS:
-                        cameraBridgeViewBase.enableView();
-                    default:
-                        super.onManagerConnected(status);
-                        break;
-                }
-            }
-        };
 
-        findViewById(R.id.take).setOnClickListener(view -> {
-            //save picture
-            File dir = new File(getApplicationContext().getFilesDir() + File.separator + "Avtobaxolash");
-            if (dir.exists()) {
-                Log.d("TAG_Dir", "onClick: mavjud");
-                deleteRecursive(dir);
-            } else {
-                Log.d("TAG_Dir", "onClick: mavjud emas" + dir.getAbsolutePath());
-            }
-        });
 
     }
 
-    void deleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory()) for (File child : fileOrDirectory.listFiles())
-            deleteRecursive(child);
-
-        fileOrDirectory.delete();
-    }
-
-    private void setCameraStart() {
-        cameraBridgeViewBase = findViewById(R.id.camera);
-        cameraBridgeViewBase.setCvCameraViewListener(this);
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 100 && grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//            setCameraStart();
+        if (requestCode == 100 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            Toast.makeText(this, "Someting gets Wrong", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -111,29 +80,58 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     return false;
                 }
             }
-            return true;
         }
-        return false;
+        return true;
+    }
+
+    private void startCamera() {
+        cameraBridgeViewBase = findViewById(R.id.camera);
+//        cameraBridgeViewBase.setVisibility(SurfaceView.VISIBLE);
+        cameraBridgeViewBase.setCvCameraViewListener(this);
+//        cameraBridgeViewBase.enableView();
+
+        baseLoaderCallback = new BaseLoaderCallback(this) {
+            @Override
+            public void onManagerConnected(int status) {
+                switch (status) {
+                    case BaseLoaderCallback.SUCCESS:
+                        cameraBridgeViewBase.enableView();
+                    default:
+                        super.onManagerConnected(status);
+                        break;
+                }
+            }
+        };
+
+        if (OpenCVLoader.initDebug()) {
+            baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+
         mRgba = new Mat(width, height, CvType.CV_8UC4);
         Display display = getWindowManager().getDefaultDisplay();
         android.graphics.Point size = new android.graphics.Point();
         display.getSize(size);
         int screen_width, screen_height;
-//        Toolbar toolbar = findViewById(R.id.toolbar);
+//        Toolbar toolbar = findViewById(R.id.toolbar_detection_activity);
+//        setSupportActionBar(toolbar);
+//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         screen_width = size.x;
         screen_height = size.y;
 
+        float mscale = ((float) screen_width / height);
+        cameraBridgeViewBase.setmScale1(mscale);
+        cameraBridgeViewBase.setmScale2(mscale);
 
-        float scaledWidth = height * CameraBridgeViewBase.mScale1;
-        float scaledHeight = width * CameraBridgeViewBase.mScale2;
+        float scaledWidth = height * cameraBridgeViewBase.getmScale1();
+        float scaledHeight = width * cameraBridgeViewBase.getmScale2();
         //todo up done correctly
 
-        y1 = (int) ((int) (scaledWidth - screen_width) / (2 * CameraBridgeViewBase.mScale1));
-        x1 = (int) ((int) (scaledHeight - screen_height) / (2 * CameraBridgeViewBase.mScale2));
+        y1 = (int) ((int) (scaledWidth - screen_width) / (2 * cameraBridgeViewBase.getmScale1()));
+        x1 = (int) ((int) (scaledHeight - screen_height) / (2 * cameraBridgeViewBase.getmScale2()));
         Log.d("TAG", "onCameraViewStarted: screenw:" + (scaledWidth) + " screenh:" + (scaledHeight));
 
 
@@ -155,113 +153,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         int yDistance = y4 - y1;
 
         x2 = (int) (0.20 * xDistance) + x1;
-        y2 = (int) (0.21 * yDistance) + y1;
+        y2 = (int) (0.30 * yDistance) + y1;
         x3 = (int) (0.70 * xDistance) + x1;
-        y3 = (int) (0.79 * yDistance) + y1;
+        y3 = (int) (0.70 * yDistance) + y1;
         x4 = (int) (xDistance) + x1;
         y4 = yDistance + y1;
 
-
-//    x2 = (int) (0.115 * xDistance) + x1;
-//        y2 = (int) (0.21 * yDistance) + y1;
-//        x3 = (int) (0.54 * xDistance) + x1;
-//        y3 = (int) (0.79 * yDistance) + y1;
-//        x4 = (int) (0.69 * xDistance) + x1;
-//        y4 = yDistance + y1;
-
-        Log.d("TAG", "onCameraViewStarted: screenH:" + (width - (2 * x1)) + " screenW:" + (height - (2 * y1)));
-        Log.d("TAG", "onCameraViewStarted: x1:" + x1 + " x2:" + x2 + " x3:" + x3 + " x4:" + x4);
-        Log.d("TAG", "onCameraViewStarted: y1:" + y1 + " y2:" + y2 + " y3:" + y3 + " y4:" + y4);
-
     }
-//    public void onCameraViewStarted(int width, int height) {
-//        mRgba = new Mat(width, height, CvType.CV_8UC4);
-//
-//        Display display = getWindowManager().getDefaultDisplay();
-//        android.graphics.Point size = new android.graphics.Point();
-//        display.getSize(size);
-//
-//        int screen_width, screen_height;
-//        screen_width = size.x;
-//        screen_height = size.y;
-//
-////        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(screen_width, screen_height);
-////        findViewById(R.id.camera_container).setLayoutParams(lp);
-////
-////            LinearLayout.LayoutParams lpTop = new LinearLayout.LayoutParams(screen_width, x / 2);
-////            findViewById(R.id.top).setLayoutParams(lpTop);
-////
-////        } else {
-////            int x1 = screen_width - (437 * screen_height) / 557;
-////            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(screen_width - x1, screen_height);
-////            findViewById(R.id.camera_container).setLayoutParams(lp);
-////        }
-//
-//
-////        float sm = (float) screen_width / screen_height;
-////        float cm = (float) height / width;
-////        if (sm > cm) {
-////            int mHeight = screen_width * (width / height);
-////            int mWidth = screen_width;
-////            int x = screen_height - mHeight;
-////            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(screen_width, screen_height - x);
-////            findViewById(R.id.camera_container).setLayoutParams(lp);
-//////            LinearLayout.LayoutParams hParam = new LinearLayout.LayoutParams(mWidth, x / 2);
-////////            hParam.setMargins(0, x / 2, 0, x / 2);
-//////            findViewById(R.id.top).setLayoutParams(hParam);
-////            cameraBridgeViewBase.setLayoutParams(lp);
-////        }
-//
-//        float scaledWidth = height * CameraBridgeViewBase.mScale1;
-//        float scaledHeight = width * CameraBridgeViewBase.mScale2;
-//
-//        //todo up done correctly
-//
-//        y1 = (int) ((int) (scaledWidth - screen_width) / (2 * CameraBridgeViewBase.mScale1));
-//        x1 = (int) ((int) (scaledHeight - screen_height) / (2 * CameraBridgeViewBase.mScale2));
-//
-//        if (x1 > 0) {
-//            x4 = width - x1;
-//        } else {
-//            x4 = width;
-//            x1 = 0;
-//        }
-//        if (y1 > 0) {
-//            y4 = height - y1;
-//        } else {
-//            y4 = height;
-//            y1 = 0;
-//        }
-//
-//
-//        int xDistance = x4 - x1;
-//        int yDistance = y4 - y1;
-////
-//        x2 = (int) (0.25 * xDistance) + x1;
-//        y2 = (int) (0.25 * yDistance) + y1;
-//        x3 = (int) (0.60 * xDistance) + x1;
-//        y3 = (int) (0.75 * yDistance) + y1;
-//        x4 = (int) (0.90 * xDistance) + x1;
-//        y4 = yDistance + y1;
-//
-////    x2 = (int) (0.115 * xDistance) + x1;
-////        y2 = (int) (0.21 * yDistance) + y1;
-////        x3 = (int) (0.54 * xDistance) + x1;
-////        y3 = (int) (0.79 * yDistance) + y1;
-////        x4 = (int) (0.69 * xDistance) + x1;
-////        y4 = yDistance + y1;
-//
-//        Log.d("TAG", "onCameraViewStarted: screenH:" + (width - (2 * x1)) + " screenW:" + (height - (2 * y1)));
-//        Log.d("TAG", "onCameraViewStarted: x1:" + x1 + " x2:" + x2 + " x3:" + x3 + " x4:" + x4);
-//        Log.d("TAG", "onCameraViewStarted: y1:" + y1 + " y2:" + y2 + " y3:" + y3 + " y4:" + y4);
-//
-//    }
 
     @Override
     public void onCameraViewStopped() {
-        mRgba.release();
-    }
 
+    }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
@@ -279,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         Imgproc.cvtColor(mRgba, mRgba, Imgproc.COLOR_RGB2GRAY);
         Imgproc.GaussianBlur(mRgba, mRgba, new Size(5, 5), 1);
-        Imgproc.Canny(mRgba, imgCanny, 10, 70);
+        Imgproc.Canny(mRgba, imgCanny, 50, 100);
 
 
         Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(x2, y2), new Scalar(255, 0, 0, 1), 5);
@@ -301,17 +204,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             int numberVertices = (int) approxCurve.total();
             double contourArea = Imgproc.contourArea(contour);
 
-            if (Math.abs(contourArea) < 400) {
+            if (Math.abs(contourArea) < 200) {
                 continue;
             }
 
             if (numberVertices >= 4 && numberVertices <= 6) {
                 Rect r = Imgproc.boundingRect(contour);
-//top right
+                if (r.height > r.width * 2 || r.width > r.height * 2) {
+                    continue;
+                }
+                //top right
                 if (r.x >= x1 && r.x + r.width <= x2) {
                     if (r.y >= y1 && r.y + r.height <= y2) {
                         Imgproc.rectangle(finalImg, new Point(x1, y1), new Point(x2, y2), new Scalar(0, 255, 0, 0), 5);
-//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
                         float smallx1 = r.x + (r.width) / 2f;
                         float smally1 = r.y + (r.height) / 2f;
                         p1 = new Point(smallx1, smally1);
@@ -322,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 if (r.x >= x3 && r.x + r.width <= x4) {
                     if (r.y >= y3 && r.y + r.width <= y4) {
                         Imgproc.rectangle(finalImg, new Point(x3, y3), new Point(x4, y4), new Scalar(0, 255, 0, 0), 5);
-//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
                         float smallx2 = r.x + (r.width) / 2f;
                         float smally2 = r.y + (r.height) / 2f;
                         p4 = new Point(smallx2, smally2);
@@ -333,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 if (r.x >= x1 && r.x + r.width <= x2) {
                     if (r.y >= y3 && r.y + r.height <= y4) {
                         Imgproc.rectangle(finalImg, new Point(x2, y3), new Point(x1, y4), new Scalar(0, 255, 0, 0), 5);
-//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
                         float smallx3 = r.x + (r.width) / 2f;
                         float smally3 = r.y + (r.height) / 2f;
                         p3 = new Point(smallx3, smally3);
@@ -344,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 if (r.x >= x3 && r.x + r.width <= x4) {
                     if (r.y >= y1 && r.y + r.height <= y2) {
                         Imgproc.rectangle(finalImg, new Point(x3, y2), new Point(x4, y1), new Scalar(0, 255, 0, 0), 5);
-//                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
+                        Imgproc.rectangle(finalImg, new Point(r.x, r.y), new Point(r.x + r.width, r.y + r.height), new Scalar(0, 255, 0, 0), 5);
                         float smallx4 = r.x + (r.width) / 2f;
                         float smally4 = r.y + (r.height) / 2f;
                         p2 = new Point(smallx4, smally4);
@@ -354,10 +260,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
         }
 
-
         if (rectangle_4 && rectangle_3 && rectangle_2 && rectangle_1 && counter == 0) {
-//            MediaActionSound mediaActionSound = new MediaActionSound();
-//            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
+            MediaActionSound mediaActionSound = new MediaActionSound();
+            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK);
             if (p1 != null && p2 != null && p3 != null && p4 != null) {
                 counter++;
                 editFrame(mrgba2);
@@ -377,6 +282,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Mat matrix = Imgproc.getPerspectiveTransform(src, dst);
         Imgproc.warpPerspective(mrgba2, imgWrap, matrix, new Size(w, h));
         Bitmap bitmap1 = Bitmap.createBitmap((int) w, (int) h, Bitmap.Config.ARGB_8888);
+//        Imgproc.resize(imgWrap, imgWrap, new Size(1200, 1600));
         Utils.matToBitmap(imgWrap, bitmap1);
         Matrix matrixs = new Matrix();
         matrixs.postRotate(90);
@@ -384,23 +290,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         showEditedPicture(rotated);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (OpenCVLoader.initDebug()) {
-            baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-        } else {
-        }
-    }
-
     private void showEditedPicture(Bitmap rotated) {
+
         try {
             String filename = "abitmap.png";
             FileOutputStream stream = this.openFileOutput(filename, Context.MODE_PRIVATE);
             rotated.compress(Bitmap.CompressFormat.PNG, 100, stream);
             stream.close();
             rotated.recycle();
-            Intent in1 = new Intent(this, ImageDetectActivity.class);
+            Intent in1 = new Intent(this, ImageUploadActivity.class);
             in1.putExtra("image", filename);
             startActivity(in1);
             finish();
@@ -408,4 +306,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             e.printStackTrace();
         }
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        startCamera();
+    }
+
+
 }

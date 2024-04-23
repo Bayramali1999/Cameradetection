@@ -32,8 +32,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     protected static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
     private static final int STARTED = 1;
-    public static float mScale1 = 2f;
-    public static float mScale2 = 2f;
+    public static float mScale1 = 1.4f;
+    public static float mScale2 = 1.4f;
     private int mState = STOPPED;
     private Bitmap mCacheBitmap;
     private CvCameraViewListener2 mListener;
@@ -95,6 +95,23 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
      */
     public void setCameraIndex(int cameraIndex) {
         this.mCameraIndex = cameraIndex;
+    }
+
+    public void setmScale1(float mscale) {
+        mScale1 = mscale;
+    }
+
+    public void setmScale2(float mscale) {
+        mScale2 = mscale;
+
+    }
+
+    public Float getmScale1() {
+        return mScale1;
+    }
+
+    public Float getmScale2() {
+        return mScale2;
     }
 
     public interface CvCameraViewListener {
